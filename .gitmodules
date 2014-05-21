@@ -1,0 +1,3 @@
+[submodule "rmq/src/rmq_broker"]
+	path = rmq/src/rmq_broker
+	url = https://github.com/FreightTrain/service-broker-rabbit.git
