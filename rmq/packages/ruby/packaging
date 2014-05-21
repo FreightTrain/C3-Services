@@ -1,0 +1,19 @@
+set -e -x
+
+RUBY_VERSION="ruby-2.0.0-p481"
+RUBYGEMS_VERSION="rubygems-2.2.2"
+BUNDLER_VERSION="bundler-1.6.2"
+
+tar xzf ruby/${RUBY_VERSION}.tar.gz
+pushd ${RUBY_VERSION}
+  ./configure --prefix=${BOSH_INSTALL_TARGET} --disable-install-doc --with-opt-dir=/var/vcap/packages/libyaml
+  make
+  make install
+popd
+
+tar zxvf ruby/${RUBYGEMS_VERSION}.tgz
+pushd ${RUBYGEMS_VERSION}
+  ${BOSH_INSTALL_TARGET}/bin/ruby setup.rb
+popd
+
+${BOSH_INSTALL_TARGET}/bin/gem install ruby/${BUNDLER_VERSION}.gem --no-ri --no-rdoc

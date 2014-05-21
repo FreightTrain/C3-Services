@@ -1,0 +1,6 @@
+---
+name: rmq_broker
+dependencies:
+  - ruby
+files:
+- rmq_broker/service_broker/**/*

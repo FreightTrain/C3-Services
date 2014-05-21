@@ -1,0 +1,8 @@
+---
+name: ruby
+dependencies:
+  - libyaml
+files:
+  - ruby/ruby-2.0.0-p481.tar.gz
+  - ruby/rubygems-2.2.2.tgz
+  - ruby/bundler-1.6.2.gem

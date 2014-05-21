@@ -1,0 +1,9 @@
+---
+name: rmq_broker
+templates:
+  bin/rmq_broker_ctl: bin/rmq_broker_ctl
+
+packages:
+- libyaml
+- ruby
+- rmq_broker
