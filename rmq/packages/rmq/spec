@@ -1,0 +1,7 @@
+---
+name: rmq
+
+dependencies: [] # no compile dependencies
+
+files:
+- rmq/rabbitmq-server-generic-unix-3.3.1.tar.gz
