@@ -1,3 +1,4 @@
 # abort script on any command that exits with a non zero value
 set -e
+tar xzf rmq/rabbitmq-server-generic-unix-3.3.1.tar.gz
 cp -R rabbitmq_server-3.3.1/* $BOSH_INSTALL_TARGET/
