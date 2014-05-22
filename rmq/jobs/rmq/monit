@@ -1,0 +1,5 @@
+check process rmq
+  with pidfile /var/vcap/sys/run/rmq/rmq.pid
+  start program "/var/vcap/jobs/rmq/bin/rmq_ctl start" with timeout 120 seconds
+  stop program "/var/vcap/jobs/rmq/bin/rmq_ctl stop"
+  group vcap
