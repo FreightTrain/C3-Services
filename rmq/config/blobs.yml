@@ -19,10 +19,6 @@ ruby/rubygems-2.2.2.tgz:
   object_id: 2a4a3af8-b1d2-44bd-a27a-245502370bac
   sha: 3fad1f6415ba92594fe4b42903f3a2938cefbadf
   size: 414111
-erlang/otp_src_R14B01.tar.gz:
-  object_id: c17e3dc8-a5cc-4364-a307-d65b40c45fd9
-  sha: f0e0529ed73587c2c4aaeb3f3a01555bd6cfe05c
-  size: 64846537
 erlang/otp_src_17.0.tar.gz:
   object_id: 0d1b70cd-6e45-4102-b242-d9c4556b69bf
   sha: de4d195e3c7d8ea0b3d2bc73b937d3dcad37b25a
