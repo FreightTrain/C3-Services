@@ -1,6 +1,8 @@
 require_relative 'bosh-mediator/lib/bosh_mediator_factory'
 require_relative 'bosh-mediator/lib/manifest_writer'
 require_relative 'bosh-mediator/lib/release_manager'
+require 'yaml'
+require 'open-uri'
 
 include ::BoshMediator::BoshMediatorFactory
 include ::BoshMediator::DownloadHelper
@@ -41,6 +43,17 @@ namespace :rmq do
     bosh_mediator.delete_deployment(deployment_name)
   end
 
+  desc 'Test the specified deployment'
+  task :test_deployment, [:spiff_dir] do |_, args|
+    
+    env_manifest_yaml = YAML.load_file(args[:spiff_dir] + '/env.yml')
+    broker_ip = env_manifest_yaml['jobs'].find{|j| j['name'] == 'rmq_broker'}['networks'].first['static_ips'].first
+    if got_broker_connection?(broker_ip)
+      then puts '** Successfully connected to RMQ broker'
+      else raise "** Cant connect to broker on #{broker_ip} **"
+    end
+  end
+
   private
 
   def stemcell_name_and_manifest(bosh_mediator, args)
@@ -53,4 +66,13 @@ namespace :rmq do
     bosh_mediator.upload_stemcell_to_director(stemcell_uri)
   end
 
+  def got_broker_connection?(broker_ip)
+    begin
+      true if timeout 5 do
+                          open("http://#{broker_ip}:9292/v2/catalog", :http_basic_authentication => ['admin', 'password'], :read_timeout => 5)
+                        end
+    rescue
+      false
+    end
+  end
 end
