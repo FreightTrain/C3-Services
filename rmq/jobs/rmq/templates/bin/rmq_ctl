@@ -1,0 +1,60 @@
+#!/bin/bash
+
+# Control script for launching RabbitMQ
+# Detail on RabbitMQ environment variables is here: https://www.rabbitmq.com/relocate.html
+
+set -e
+set -u
+
+export LANG="en_US.UTF-8"
+export PATH="${PATH}:/var/vcap/packages/erlang/bin/"
+
+export JOB_NAME="rmq"
+export RUN_DIR="/var/vcap/sys/run/${JOB_NAME}"
+export TMP_DIR="/var/vcap/sys/tmp/${JOB_NAME}"
+export STORE_DIR="/var/vcap/store/${JOB_NAME}"
+
+export RABBITMQ_HOME="/var/vcap/packages/${JOB_NAME}"
+export RABBITMQ_PID_FILE="${RUN_DIR}/rmq.pid"
+export RABBITMQ_LOG_BASE="/var/vcap/sys/log/${JOB_NAME}"
+export RABBITMQ_MNESIA_DIR="${STORE_DIR}"
+export RABBITMQ_ENABLED_PLUGINS_FILE="${STORE_DIR}/enabled_plugins"
+export RABBITMQ_PLUGINS_EXPAND_DIR="${RUN_DIR}/plugins_expand"
+
+function directory_setup {
+
+    for dir in ${RUN_DIR} ${TMP_DIR} ${STORE_DIR} ${RABBITMQ_LOG_BASE}
+    do
+      mkdir -p ${dir}
+      chown vcap:vcap ${dir}
+      chmod 775 ${dir}
+    done
+}
+
+function perform_action {
+
+  action=${1}
+
+  case ${action} in
+
+    start)
+      chpst -u vcap:vcap ${RABBITMQ_HOME}/sbin/rabbitmq-plugins enable rabbitmq_management
+      chpst -u vcap:vcap ${RABBITMQ_HOME}/sbin/rabbitmq-server start &
+      ;;
+
+    stop)
+      chpst -u vcap:vcap ${RABBITMQ_HOME}/sbin/rabbitmqctl stop
+      ;;
+
+    *)
+      echo "Usage: rmq_ctl {start|stop}"
+      ;;
+
+  esac
+  exit 0
+
+}
+
+# Main
+directory_setup "rmq"
+perform_action ${1}
