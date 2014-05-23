@@ -1,3 +1,6 @@
 [submodule "bosh-mediator"]
 	path = bosh-mediator
 	url = https://github.com/FreightTrain/bosh-mediator.git
+[submodule "rmq"]
+	path = rmq
+	url = https://github.com/FreightTrain/rmq-release.git
