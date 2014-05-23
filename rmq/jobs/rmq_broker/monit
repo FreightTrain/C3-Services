@@ -1,5 +1,0 @@
-check process rmq_broker
-  with pidfile /var/vcap/sys/run/rmq_broker/rmq_broker.pid
-  start program "/var/vcap/jobs/rmq_broker/bin/rmq_broker_ctl start" with timeout 120 seconds
-  stop program "/var/vcap/jobs/rmq_broker/bin/rmq_broker_ctl stop"
-  group vcap

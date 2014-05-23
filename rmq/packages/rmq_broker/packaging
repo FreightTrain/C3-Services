@@ -1,9 +1,0 @@
-# abort script on any command that exit with a non zero value
-set -e
-
-bundle_cmd=/var/vcap/packages/ruby/bin/bundle
-
-cp -a rmq_broker/service_broker/* ${BOSH_INSTALL_TARGET}
-
-cd ${BOSH_INSTALL_TARGET}
-$bundle_cmd install -j3 --deployment --without development test
