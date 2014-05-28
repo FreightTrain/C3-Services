@@ -69,7 +69,7 @@ namespace :rmq do
   def got_broker_connection?(broker_ip)
     begin
       true if timeout 5 do
-                          open("http://#{broker_ip}:9292/v2/catalog", :http_basic_authentication => ['admin', 'password'], :read_timeout => 5)
+                          open("http://#{broker_ip}:9998/v2/catalog", 'X-Broker-Api-Version' => '2.1', :http_basic_authentication => ['admin', 'admin'], :read_timeout => 5)
                         end
     rescue
       false
