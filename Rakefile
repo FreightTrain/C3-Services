@@ -34,6 +34,11 @@ namespace :rmq do
     bosh_mediator.deploy
   end
 
+  desc 'Register the RMQ service broker with Cloud Foundry'
+  task :register_service_broker do
+    sh 'bosh run errand rmq_broker_registrar'
+  end
+
   desc 'Delete the specified RMQ deployment'
   task :delete_deployment, [:director_url, :spiff_dir, :username, :password] do |_, args|
     args.with_defaults(:username => 'admin', :password => 'admin', :spiff_dir => nil)
