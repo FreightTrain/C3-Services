@@ -35,8 +35,20 @@ namespace :rmq do
   end
 
   desc 'Register the RMQ service broker with Cloud Foundry'
-  task :register_service_broker do
-    sh 'bosh run errand rmq_broker_registrar'
+  task :register_service_broker, [:core_manifest, :director_url, :stemcell_resource_uri, :spiff_dir, :username, :password] do |_, args|
+    args.with_defaults(:username => 'admin', :password => 'admin', :spiff_dir => nil)
+
+    release_dir = File.dirname(__FILE__) + '/rmq'
+    core_manifest = args[:core_manifest]
+
+    bosh_mediator = create_bosh_mediator(args[:director_url], args[:username], args[:password], release_dir)
+
+    release_manifest = BoshMediator::ReleaseManager.new.find_dev_release(release_dir)
+    stemcell_release_info = stemcell_name_and_manifest(bosh_mediator, args)
+    stemcell_release_info.merge!(:release_version => YAML.load_file(release_manifest)['version'])
+    manifest_file = BoshMediator::ManifestWriter.new(core_manifest, stemcell_release_info, args[:spiff_dir]).parse_and_merge_file
+    bosh_mediator.set_manifest_file(manifest_file)
+    bosh_mediator.run_errand 'rmq_broker_registrar'
   end
 
   desc 'Delete the specified RMQ deployment'
