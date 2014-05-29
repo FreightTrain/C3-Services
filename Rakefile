@@ -34,7 +34,7 @@ namespace :rmq do
     bosh_mediator.deploy
   end
 
-  desc 'Delete the specified deployment'
+  desc 'Delete the specified RMQ deployment'
   task :delete_deployment, [:director_url, :spiff_dir, :username, :password] do |_, args|
     args.with_defaults(:username => 'admin', :password => 'admin', :spiff_dir => nil)
     bosh_mediator = create_bosh_mediator(args[:director_url], args[:username], args[:password], Dir.pwd)
@@ -94,6 +94,14 @@ namespace :cf do
     bosh_mediator.set_manifest_file(manifest_file)
     bosh_mediator.upload_release(release_file)
     bosh_mediator.deploy
+  end
+
+  desc 'Delete the specified CF deployment'
+  task :delete_deployment, [:director_url, :spiff_dir, :username, :password] do |_, args|
+    args.with_defaults(:username => 'admin', :password => 'admin', :spiff_dir => nil)
+    bosh_mediator = create_bosh_mediator(args[:director_url], args[:username], args[:password], Dir.pwd)
+    deployment_name = YAML.load_file(File.join(args[:spiff_dir], 'env.yml'))['meta']['name']
+    bosh_mediator.delete_deployment(deployment_name)
   end
 
   private
