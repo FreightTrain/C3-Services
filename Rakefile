@@ -34,6 +34,23 @@ namespace :rmq do
     bosh_mediator.deploy
   end
 
+  desc 'Recreate RMQ server 0'
+  task :recreate_rmq_server, [ :core_manifest, :director_url, :stemcell_resource_uri, :spiff_dir, :username, :password] do |_, args|
+    args.with_defaults(:username => 'admin', :password => 'admin', :spiff_dir => nil)
+
+    release_dir = File.dirname(__FILE__) + '/rmq'
+    core_manifest = args[:core_manifest]
+
+    bosh_mediator = create_bosh_mediator(args[:director_url], args[:username], args[:password], release_dir)
+    
+    stemcell_release_info = stemcell_name_and_manifest(bosh_mediator, args)
+    stemcell_release_info.merge!(:release_version => 'latest')
+    manifest_file = BoshMediator::ManifestWriter.new(core_manifest, stemcell_release_info, args[:spiff_dir]).parse_and_merge_file
+    bosh_mediator.set_manifest_file(manifest_file)
+    bosh_mediator.recreate_job('rmq',0)
+  end
+
+
   desc 'Register the RMQ service broker with Cloud Foundry'
   task :register_service_broker, [:core_manifest, :director_url, :stemcell_resource_uri, :spiff_dir, :username, :password] do |_, args|
     args.with_defaults(:username => 'admin', :password => 'admin', :spiff_dir => nil)
