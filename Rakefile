@@ -7,20 +7,20 @@ require 'open-uri'
 include ::BoshMediator::BoshMediatorFactory
 include ::BoshMediator::DownloadHelper
 
-namespace :rmq do
+namespace :riak do
 
-  desc 'Create the RMQ release'
+  desc 'Create the Riak release'
   task :create_release do
-    release_dir = File.dirname(__FILE__) + '/rmq'
+    release_dir = File.dirname(__FILE__) + '/riak'
     bosh_mediator = create_local_bosh_mediator(release_dir)
-    bosh_mediator.create_release('rmq')
+    bosh_mediator.create_release('cf-riak-cs')
   end
 
   desc 'Upload and deploy the release to the BOSH director'
   task :upload_and_deploy_release, [ :core_manifest, :director_url, :stemcell_resource_uri, :spiff_dir, :username, :password] do |_, args|
     args.with_defaults(:username => 'admin', :password => 'admin', :spiff_dir => nil)
 
-    release_dir = File.dirname(__FILE__) + '/rmq'
+    release_dir = File.dirname(__FILE__) + '/riak'
     core_manifest = args[:core_manifest]
 
     bosh_mediator = create_bosh_mediator(args[:director_url], args[:username], args[:password], release_dir)
@@ -34,11 +34,11 @@ namespace :rmq do
     bosh_mediator.deploy
   end
 
-  desc 'Recreate RMQ server 0'
-  task :recreate_rmq_server, [ :core_manifest, :director_url, :stemcell_resource_uri, :spiff_dir, :username, :password] do |_, args|
+  desc 'Recreate Riak server 0'
+  task :recreate_riak_server, [ :core_manifest, :director_url, :stemcell_resource_uri, :spiff_dir, :username, :password] do |_, args|
     args.with_defaults(:username => 'admin', :password => 'admin', :spiff_dir => nil)
 
-    release_dir = File.dirname(__FILE__) + '/rmq'
+    release_dir = File.dirname(__FILE__) + '/riak'
     core_manifest = args[:core_manifest]
 
     bosh_mediator = create_bosh_mediator(args[:director_url], args[:username], args[:password], release_dir)
@@ -47,15 +47,15 @@ namespace :rmq do
     stemcell_release_info.merge!(:release_version => 'latest')
     manifest_file = BoshMediator::ManifestWriter.new(core_manifest, stemcell_release_info, args[:spiff_dir]).parse_and_merge_file
     bosh_mediator.set_manifest_file(manifest_file)
-    bosh_mediator.recreate_job('rmq',0)
+    bosh_mediator.recreate_job('riak',0)
   end
 
 
-  desc 'Register the RMQ service broker with Cloud Foundry'
+  desc 'Register the Riak service broker with Cloud Foundry'
   task :register_service_broker, [:core_manifest, :director_url, :stemcell_resource_uri, :spiff_dir, :username, :password] do |_, args|
     args.with_defaults(:username => 'admin', :password => 'admin', :spiff_dir => nil)
 
-    release_dir = File.dirname(__FILE__) + '/rmq'
+    release_dir = File.dirname(__FILE__) + '/riak'
     core_manifest = args[:core_manifest]
 
     bosh_mediator = create_bosh_mediator(args[:director_url], args[:username], args[:password], release_dir)
@@ -65,10 +65,10 @@ namespace :rmq do
     stemcell_release_info.merge!(:release_version => YAML.load_file(release_manifest)['version'])
     manifest_file = BoshMediator::ManifestWriter.new(core_manifest, stemcell_release_info, args[:spiff_dir]).parse_and_merge_file
     bosh_mediator.set_manifest_file(manifest_file)
-    bosh_mediator.run_errand 'rmq_broker_registrar'
+    bosh_mediator.run_errand 'riak_broker_registrar'
   end
 
-  desc 'Delete the specified RMQ deployment'
+  desc 'Delete the specified Riak deployment'
   task :delete_deployment, [:director_url, :spiff_dir, :username, :password] do |_, args|
     args.with_defaults(:username => 'admin', :password => 'admin', :spiff_dir => nil)
     bosh_mediator = create_bosh_mediator(args[:director_url], args[:username], args[:password], Dir.pwd)
@@ -80,9 +80,9 @@ namespace :rmq do
   task :test_deployment, [:spiff_dir] do |_, args|
     
     env_manifest_yaml = YAML.load_file(args[:spiff_dir] + '/env.yml')
-    broker_ip = env_manifest_yaml['jobs'].find{|j| j['name'] == 'rmq_broker'}['networks'].first['static_ips'].first
+    broker_ip = env_manifest_yaml['jobs'].find{|j| j['name'] == 'riak_broker'}['networks'].first['static_ips'].first
     if got_broker_connection?(broker_ip)
-      then puts '** Successfully connected to RMQ broker'
+      then puts '** Successfully connected to Riak broker'
       else raise "** Cant connect to broker on #{broker_ip} **"
     end
   end
