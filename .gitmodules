@@ -4,3 +4,6 @@
 [submodule "rmq"]
 	path = rmq
 	url = https://github.com/FreightTrain/rmq-release.git
+[submodule "riak"]
+	path = riak
+	url = https://github.com/FreightTrain/cf-riak-cs-release.git
