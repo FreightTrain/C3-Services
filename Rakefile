@@ -205,7 +205,7 @@ namespace :riak do
 
   def riak_healthcheck?(riak_ips)
     begin
-      true if timeout 60 do
+      true if timeout 5 do
                             require 'riak'
 
                             # Create a client that uses Protocol Buffers
