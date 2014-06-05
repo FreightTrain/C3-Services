@@ -50,22 +50,10 @@ namespace :rmq do
     bosh_mediator.recreate_job('rmq',0)
   end
 
-
   desc 'Register the RMQ service broker with Cloud Foundry'
   task :register_service_broker, [:core_manifest, :director_url, :stemcell_resource_uri, :spiff_dir, :username, :password] do |_, args|
-    args.with_defaults(:username => 'admin', :password => 'admin', :spiff_dir => nil)
-
     release_dir = File.dirname(__FILE__) + '/rmq'
-    core_manifest = args[:core_manifest]
-
-    bosh_mediator = create_bosh_mediator(args[:director_url], args[:username], args[:password], release_dir)
-
-    release_manifest = BoshMediator::ReleaseManager.new.find_dev_release(release_dir)
-    stemcell_release_info = stemcell_name_and_manifest(bosh_mediator, args)
-    stemcell_release_info.merge!(:release_version => YAML.load_file(release_manifest)['version'])
-    manifest_file = BoshMediator::ManifestWriter.new(core_manifest, stemcell_release_info, args[:spiff_dir]).parse_and_merge_file
-    bosh_mediator.set_manifest_file(manifest_file)
-    bosh_mediator.run_errand 'rmq_broker_registrar'
+    run_errand(args, release_dir, 'rmq_broker_registrar')
   end
 
   desc 'Delete the specified RMQ deployment'
@@ -143,22 +131,10 @@ namespace :riak do
     bosh_mediator.recreate_job('riak',0)
   end
 
-
   desc 'Register the Riak service broker with Cloud Foundry'
   task :register_service_broker, [:core_manifest, :director_url, :stemcell_resource_uri, :spiff_dir, :username, :password] do |_, args|
-    args.with_defaults(:username => 'admin', :password => 'admin', :spiff_dir => nil)
-
     release_dir = File.dirname(__FILE__) + '/riak'
-    core_manifest = args[:core_manifest]
-
-    bosh_mediator = create_bosh_mediator(args[:director_url], args[:username], args[:password], release_dir)
-
-    release_manifest = BoshMediator::ReleaseManager.new.find_dev_release(release_dir)
-    stemcell_release_info = stemcell_name_and_manifest(bosh_mediator, args)
-    stemcell_release_info.merge!(:release_version => YAML.load_file(release_manifest)['version'])
-    manifest_file = BoshMediator::ManifestWriter.new(core_manifest, stemcell_release_info, args[:spiff_dir]).parse_and_merge_file
-    bosh_mediator.set_manifest_file(manifest_file)
-    bosh_mediator.run_errand 'riak_broker_registrar'
+    run_errand(args, release_dir, 'riak_broker_registrar')
   end
 
   desc 'Delete the specified Riak deployment'
@@ -304,4 +280,19 @@ def got_broker_connection?(broker_url)
   rescue
     false
   end
+end
+
+def run_errand(bosh_state, release_dir, errand_name)
+  bosh_state = {:username => 'admin', :password => 'admin', :spiff_dir => nil}.merge!(bosh_state)
+
+  core_manifest = bosh_state[:core_manifest]
+
+  bosh_mediator = create_bosh_mediator(bosh_state[:director_url], bosh_state[:username], bosh_state[:password], release_dir)
+
+  release_manifest = BoshMediator::ReleaseManager.new.find_dev_release(release_dir)
+  stemcell_release_info = stemcell_name_and_manifest(bosh_mediator, bosh_state)
+  stemcell_release_info.merge!(:release_version => YAML.load_file(release_manifest)['version'])
+  manifest_file = BoshMediator::ManifestWriter.new(core_manifest, stemcell_release_info, bosh_state[:spiff_dir]).parse_and_merge_file
+  bosh_mediator.set_manifest_file(manifest_file)
+  bosh_mediator.run_errand errand_name
 end
