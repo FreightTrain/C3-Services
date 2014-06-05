@@ -182,16 +182,19 @@ namespace :riak do
 
   desc 'Test the specified deployment'
   task :test_deployment, [:spiff_dir] do |_, args|
-    
-    env_manifest_yaml = YAML.load_file(args[:spiff_dir] + '/env.yml')
+    check_riak_is_healthy(args[:spiff_dir])
+  end
+
+  private
+
+  def check_riak_is_healthy(spiff_dir)
+    env_manifest_yaml = YAML.load_file(spiff_dir + '/env.yml')
     riak_ips = env_manifest_yaml['jobs'].find{|j| j['name'] == 'riak'}['networks'].first['static_ips']
     if riak_healthcheck?(riak_ips)
       then puts '** Healthcheck on Riak Successful'
       else raise "** Riak healthcheck failed on #{riak_ips} **"
     end
   end
-
-  private
 
   def stemcell_name_and_manifest(bosh_mediator, args)
     stemcell_uri = if args[:stemcell_resource_uri]
