@@ -186,7 +186,7 @@ namespace :riak do
     env_manifest_yaml = YAML.load_file(args[:spiff_dir] + '/env.yml')
     riak_ips = env_manifest_yaml['jobs'].find{|j| j['name'] == 'riak'}['networks'].first['static_ips']
     if riak_healthcheck?(riak_ips)
-      then puts '** Healthcheck on Riak Successfull'
+      then puts '** Healthcheck on Riak Successful'
       else raise "** Riak healthcheck failed on #{riak_ips} **"
     end
   end
