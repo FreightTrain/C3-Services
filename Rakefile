@@ -212,11 +212,10 @@ namespace :riak do
                             client = Riak::Client.new(:protocol => "pbc")
 
                             # Automatically balance between multiple nodes
-                            client = Riak::Client.new(:nodes => [
-                              {:host => riak_ips[0],  :pb_port => 8087},
-                              {:host => riak_ips[1],  :pb_port => 8087},
-                              {:host => riak_ips[2],  :pb_port => 8087},
-                            ])
+                            riak_nodes = riak_ips.map do |ip|
+                              {:host => ip,  :pb_port => 8087}
+                            end
+                            client = Riak::Client.new(:nodes => riak_nodes)
 
                             # Retrieve a bucket
                             bucket = client.bucket("doc")  # a Riak::Bucket
