@@ -188,12 +188,15 @@ namespace :riak do
   private
 
   def check_riak_is_healthy(spiff_dir)
-    env_manifest_yaml = YAML.load_file(spiff_dir + '/env.yml')
-    riak_ips = env_manifest_yaml['jobs'].find{|j| j['name'] == 'riak'}['networks'].first['static_ips']
-    if riak_healthcheck?(riak_ips)
+    if riak_healthcheck?(ip_addresses_for_job(spiff_dir, 'riak'))
       then puts '** Healthcheck on Riak Successful'
       else raise "** Riak healthcheck failed on #{riak_ips} **"
     end
+  end
+
+  def ip_addresses_for_job(spiff_dir, job_name)
+    env_manifest_yaml = YAML.load_file(spiff_dir + '/env.yml')
+    env_manifest_yaml['jobs'].find{|j| j['name'] == job_name}['networks'].first['static_ips']
   end
 
   def stemcell_name_and_manifest(bosh_mediator, args)
