@@ -78,8 +78,7 @@ namespace :rmq do
 
   desc 'Test the specified deployment'
   task :test_deployment, [:spiff_dir] do |_, args|
-    env_manifest_yaml = YAML.load_file(args[:spiff_dir] + '/env.yml')
-    broker_ip = env_manifest_yaml['jobs'].find{|j| j['name'] == 'rmq_broker'}['networks'].first['static_ips'].first
+    broker_ip = ip_addresses_for_job(args[:spiff_dir], 'rmq_broker').first
     if got_broker_connection?("http://#{broker_ip}:9998")
       then puts '** Successfully connected to RMQ broker'
       else raise "** Cant connect to broker on #{broker_ip} **"
