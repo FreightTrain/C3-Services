@@ -78,10 +78,9 @@ namespace :rmq do
 
   desc 'Test the specified deployment'
   task :test_deployment, [:spiff_dir] do |_, args|
-    
     env_manifest_yaml = YAML.load_file(args[:spiff_dir] + '/env.yml')
     broker_ip = env_manifest_yaml['jobs'].find{|j| j['name'] == 'rmq_broker'}['networks'].first['static_ips'].first
-    if got_broker_connection?(broker_ip)
+    if got_broker_connection?("http://#{broker_ip}:9998")
       then puts '** Successfully connected to RMQ broker'
       else raise "** Cant connect to broker on #{broker_ip} **"
     end
@@ -99,15 +98,6 @@ namespace :rmq do
     bosh_mediator.upload_stemcell_to_director(stemcell_uri)
   end
 
-  def got_broker_connection?(broker_ip)
-    begin
-      true if timeout 5 do
-                          open("http://#{broker_ip}:9998/v2/catalog", 'X-Broker-Api-Version' => '2.1', :http_basic_authentication => ['admin', 'admin'], :read_timeout => 5)
-                        end
-    rescue
-      false
-    end
-  end
 end
 
 
@@ -183,6 +173,7 @@ namespace :riak do
   desc 'Test the specified deployment'
   task :test_deployment, [:spiff_dir] do |_, args|
     check_riak_is_healthy(args[:spiff_dir])
+    check_riak_broker_is_healthy(args[:spiff_dir])
   end
 
   private
@@ -191,6 +182,16 @@ namespace :riak do
     if riak_healthcheck?(ip_addresses_for_job(spiff_dir, 'riak'))
       then puts '** Healthcheck on Riak Successful'
       else raise "** Riak healthcheck failed on #{riak_ips} **"
+    end
+  end
+
+  def check_riak_broker_is_healthy(spiff_dir)
+    broker_ip = ip_addresses_for_job(spiff_dir, 'riak_broker').first
+    broker_url = "http://#{broker_ip}:9292"
+    if got_broker_connection?(broker_url)
+      puts '** Healthcheck on Riak Broker Successful'
+    else
+      raise "Riak broker is not available at #{broker_url}"
     end
   end
 
@@ -294,4 +295,14 @@ namespace :cf do
     end
   end
 
+end
+
+def got_broker_connection?(broker_url)
+  begin
+    true if timeout 5 do
+      open("#{broker_url}/v2/catalog", 'X-Broker-Api-Version' => '2.1', :http_basic_authentication => ['admin', 'admin'], :read_timeout => 5)
+    end
+  rescue
+    false
+  end
 end
