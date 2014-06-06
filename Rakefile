@@ -149,6 +149,25 @@ namespace :riak do
     check_riak_broker_is_healthy(args[:spiff_dir])
   end
 
+  desc 'Cloud Foundry integration test'
+  task :integration_test, [:core_manifest, :director_url, :stemcell_resource_uri, :spiff_dir, :username, :password, :cf_app_domain, :cf_username, :cf_password] do |_, args|
+    release_dir = File.dirname(__FILE__) + '/riak'
+    perform_service_integration_test(
+      service_name: 'riak',
+      plan_name: 'leveldb',
+      bosh_state: args,
+      cf_credentials: {
+        username: args[:cf_username],
+        password: args[:cf_password],
+        app_domain: args[:cf_app_domain]
+      },
+      test_app_repo_url: 'https://github.com/FreightTrain/riak-hello-world.git',
+      test_endpoint: '/',
+      release_dir: release_dir,
+      service_job: 'riak'
+    )
+  end
+
   private
 
   def check_riak_is_healthy(spiff_dir)
