@@ -339,7 +339,7 @@ def recreate_job(bosh_state, release_dir, job_name)
   stemcell_release_info.merge!(:release_version => 'latest')
   manifest_file = BoshMediator::ManifestWriter.new(core_manifest, stemcell_release_info, bosh_state[:spiff_dir]).parse_and_merge_file
   bosh_mediator.set_manifest_file(manifest_file)
-  bosh_mediator.recreate_job('rmq',0)
+  bosh_mediator.recreate_job(job_name, 0)
 end
 
 def run_errand(bosh_state, release_dir, errand_name)
