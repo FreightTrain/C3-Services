@@ -1,8 +1,10 @@
+require 'open-uri'
+require 'securerandom'
+require 'yaml'
+
 require_relative 'bosh-mediator/lib/bosh_mediator_factory'
 require_relative 'bosh-mediator/lib/manifest_writer'
 require_relative 'bosh-mediator/lib/release_manager'
-require 'yaml'
-require 'open-uri'
 
 include ::BoshMediator::BoshMediatorFactory
 include ::BoshMediator::DownloadHelper
@@ -35,19 +37,9 @@ namespace :rmq do
   end
 
   desc 'Recreate RMQ server 0'
-  task :recreate_rmq_server, [ :core_manifest, :director_url, :stemcell_resource_uri, :spiff_dir, :username, :password] do |_, args|
-    args.with_defaults(:username => 'admin', :password => 'admin', :spiff_dir => nil)
-
+  task :recreate_rmq_server, [:core_manifest, :director_url, :stemcell_resource_uri, :spiff_dir, :username, :password] do |_, args|
     release_dir = File.dirname(__FILE__) + '/rmq'
-    core_manifest = args[:core_manifest]
-
-    bosh_mediator = create_bosh_mediator(args[:director_url], args[:username], args[:password], release_dir)
-    
-    stemcell_release_info = stemcell_name_and_manifest(bosh_mediator, args)
-    stemcell_release_info.merge!(:release_version => 'latest')
-    manifest_file = BoshMediator::ManifestWriter.new(core_manifest, stemcell_release_info, args[:spiff_dir]).parse_and_merge_file
-    bosh_mediator.set_manifest_file(manifest_file)
-    bosh_mediator.recreate_job('rmq',0)
+    recreate_job(args, release_dir, 'rmq')
   end
 
   desc 'Register the RMQ service broker with Cloud Foundry'
@@ -73,20 +65,26 @@ namespace :rmq do
     end
   end
 
-  private
-
-  def stemcell_name_and_manifest(bosh_mediator, args)
-    stemcell_uri = if args[:stemcell_resource_uri]
-      args[:stemcell_resource_uri]
-    else
-      'http://bosh-jenkins-artifacts.s3.amazonaws.com/bosh-stemcell/vsphere/bosh-stemcell-1269-vsphere-esxi-centos.tgz'
-    end
-
-    bosh_mediator.upload_stemcell_to_director(stemcell_uri)
+  desc 'Cloud Foundry integration test'
+  task :integration_test, [:core_manifest, :director_url, :stemcell_resource_uri, :spiff_dir, :username, :password, :cf_app_domain, :cf_username, :cf_password] do |_, args|
+    release_dir = File.dirname(__FILE__) + '/rmq'
+    perform_service_integration_test(
+      service_name: 'rabbitmq',
+      plan_name: 'default',
+      bosh_state: args,
+      cf_credentials: {
+        username: args[:cf_username],
+        password: args[:cf_password],
+        app_domain: args[:cf_app_domain]
+      },
+      test_app_repo_url: 'https://github.com/FreightTrain/labrat.git',
+      test_endpoint: '/services/rabbitmq',
+      release_dir: release_dir,
+      service_job: 'rmq'
+    )
   end
 
 end
-
 
 namespace :riak do
 
@@ -282,6 +280,49 @@ def got_broker_connection?(broker_url)
   end
 end
 
+def local_repo_path(git_repo_url)
+  repo_path = URI.parse(git_repo_url).path
+  Pathname.new(repo_path).basename.sub_ext('').to_s
+end
+
+def perform_service_integration_test(t)
+  app_name = "#{t[:service_name]}-test-#{SecureRandom.uuid}"
+  app_test_url = "http://#{app_name}.#{t[:cf_credentials][:app_domain]}"
+  sh "cf api --skip-ssl-validation https://api.#{t[:cf_credentials][:app_domain]}"
+  sh "cf auth #{t[:cf_credentials][:username]} #{t[:cf_credentials][:password]}"
+  begin
+    sh "cf create-org #{app_name}"
+    sh "cf create-space #{app_name} -o #{app_name}"
+    sh "cf target -o #{app_name} -s #{app_name}"
+    sh "cf create-service #{t[:service_name]} #{t[:plan_name]} #{app_name}"
+    local_dir = local_repo_path(t[:test_app_repo_url])
+    rm_rf local_dir
+    sh "git clone --depth 1 #{t[:test_app_repo_url]}"
+    sh "cf push #{app_name} -p ./#{local_dir}"
+    sh "cf bind-service #{app_name} #{app_name}"
+    sh "cf restart #{app_name}"
+    open("#{app_test_url}#{t[:test_endpoint]}", :read_timeout => 5)
+    recreate_job(t[:bosh_state], t[:release_dir], t[:service_job])
+    open("#{app_test_url}#{t[:test_endpoint]}", :read_timeout => 5)
+  ensure
+    sh "cf delete-org -f #{app_name}"
+  end
+end
+
+def recreate_job(bosh_state, release_dir, job_name)
+  bosh_state = {:username => 'admin', :password => 'admin', :spiff_dir => nil}.merge!(bosh_state)
+
+  core_manifest = bosh_state[:core_manifest]
+
+  bosh_mediator = create_bosh_mediator(bosh_state[:director_url], bosh_state[:username], bosh_state[:password], release_dir)
+
+  stemcell_release_info = stemcell_name_and_manifest(bosh_mediator, bosh_state)
+  stemcell_release_info.merge!(:release_version => 'latest')
+  manifest_file = BoshMediator::ManifestWriter.new(core_manifest, stemcell_release_info, bosh_state[:spiff_dir]).parse_and_merge_file
+  bosh_mediator.set_manifest_file(manifest_file)
+  bosh_mediator.recreate_job('rmq',0)
+end
+
 def run_errand(bosh_state, release_dir, errand_name)
   bosh_state = {:username => 'admin', :password => 'admin', :spiff_dir => nil}.merge!(bosh_state)
 
@@ -295,4 +336,14 @@ def run_errand(bosh_state, release_dir, errand_name)
   manifest_file = BoshMediator::ManifestWriter.new(core_manifest, stemcell_release_info, bosh_state[:spiff_dir]).parse_and_merge_file
   bosh_mediator.set_manifest_file(manifest_file)
   bosh_mediator.run_errand errand_name
+end
+
+def stemcell_name_and_manifest(bosh_mediator, args)
+  stemcell_uri = if args[:stemcell_resource_uri]
+    args[:stemcell_resource_uri]
+  else
+    'http://bosh-jenkins-artifacts.s3.amazonaws.com/bosh-stemcell/vsphere/bosh-stemcell-1269-vsphere-esxi-centos.tgz'
+  end
+
+  bosh_mediator.upload_stemcell_to_director(stemcell_uri)
 end
