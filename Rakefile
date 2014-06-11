@@ -144,10 +144,14 @@ namespace :riak do
   end
 
   desc 'Test the specified deployment'
-  task :test_deployment, [:spiff_dir] do |_, args|
+  task :test_deployment, [:core_manifest, :director_url, :stemcell_resource_uri, :spiff_dir, :username, :password] do |_, args|
+    args.with_defaults(:username => 'admin', :password => 'admin')
+
     check_riak_is_healthy(args[:spiff_dir])
     check_riak_broker_is_healthy(args[:spiff_dir])
-    riak_check_bucket(ip_addresses_for_job(args[:spiff_dir], 'riak'))
+    riak_check_bucket(ip_addresses_for_job(args[:spiff_dir], 'riak'),'deleted')
+    Rake::Task['riak:upload_and_deploy_release'].invoke(args[:core_manifest] + '.clean_disabled', args[:director_url], args[:stemcell_resource_uri], args[:spiff_dir], args[:username], args[:password])
+    riak_check_bucket(ip_addresses_for_job(args[:spiff_dir], 'riak'),'exists')
   end
 
   desc 'Cloud Foundry integration test'
@@ -205,7 +209,7 @@ namespace :riak do
     bosh_mediator.upload_stemcell_to_director(stemcell_uri)
   end
 
-  def riak_check_bucket(riak_ips)
+  def riak_check_bucket(riak_ips,desired_status)
     require 'riak'
     I18n.enforce_available_locales = false
     Riak.disable_list_keys_warnings = true
@@ -220,12 +224,21 @@ namespace :riak do
 
     sleep 70
     current_buckets = client.buckets.collect { |x| x.name }
-    if current_buckets.include?('to_be_deleted')
-      raise '** Failed to delete rogue bucket **'
-    else
-      puts '** Rogue bucket successfully removed **'
+
+    case desired_status
+    when 'deleted'
+      if current_buckets.include?('to_be_deleted')
+        raise '** Failed to delete rogue bucket **'
+      else
+        puts '** Rogue bucket successfully removed **'
+      end
+    when 'exists'
+      if current_buckets.include?('to_be_deleted') == false
+        raise '** Failed to preserve rogue bucket **'
+      else
+        puts '** Successfully preserved rogue bucket **'
+      end
     end
-      
   end
 
   def riak_healthcheck?(riak_ips)
