@@ -147,6 +147,7 @@ namespace :riak do
   task :test_deployment, [:spiff_dir] do |_, args|
     check_riak_is_healthy(args[:spiff_dir])
     check_riak_broker_is_healthy(args[:spiff_dir])
+    riak_check_bucket(ip_addresses_for_job(args[:spiff_dir], 'riak'))
   end
 
   desc 'Cloud Foundry integration test'
@@ -204,10 +205,34 @@ namespace :riak do
     bosh_mediator.upload_stemcell_to_director(stemcell_uri)
   end
 
+  def riak_check_bucket(riak_ips)
+    require 'riak'
+    I18n.enforce_available_locales = false
+    Riak.disable_list_keys_warnings = true
+    riak_nodes = riak_ips.map do |ip|
+      {:host => ip,  :pb_port => 8087}
+    end
+    client = Riak::Client.new(:protocol => "pbc", :nodes => riak_nodes)
+    object = client.bucket('to_be_deleted').new('foobar')
+    object.content_type = 'foo'
+    object.raw_data = 'baz'
+    object.store
+
+    sleep 70
+    current_buckets = client.buckets.collect { |x| x.name }
+    if current_buckets.include?('to_be_deleted')
+      raise '** Failed to delete rogue bucket **'
+    else
+      puts '** Rogue bucket successfully removed **'
+    end
+      
+  end
+
   def riak_healthcheck?(riak_ips)
     begin
       true if timeout 5 do
                             require 'riak'
+                            I18n.enforce_available_locales = false
 
                             # Create a client that uses Protocol Buffers
                             client = Riak::Client.new(:protocol => "pbc")
