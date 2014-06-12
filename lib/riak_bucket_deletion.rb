@@ -1,12 +1,11 @@
-require 'riak'
-
 module Services
   class RiakBucketDeletion
 
     I18n.enforce_available_locales = false
-    Riak.disable_list_keys_warnings = true
 
     def check_health!(ip_addresses)
+      require 'riak'
+      Riak.disable_list_keys_warnings = true
       riak_nodes = ip_addresses.map do |ip|
         {:host => ip,  :pb_port => 8087}
       end

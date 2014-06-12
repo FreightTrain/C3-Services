@@ -1,4 +1,4 @@
-require 'riak'
+require 'i18n'
 
 module Services
   class RiakHealth
@@ -6,6 +6,7 @@ module Services
     I18n.enforce_available_locales = false
 
     def check_health!(ip_addresses)
+      require 'riak'
       timeout 5 do
         payload = '<html><body>Hello, world!</body></html>'
 
