@@ -77,14 +77,14 @@ namespace :riak do |nm|
   end
 
   desc 'Cloud Foundry integration test'
-  integration_task :integration_test, 'riak' do |test_args|
+  integration_task :integration_test, 'riak' do |test_args, bm|
     %w(bitcask leveldb).each do |plan|
       Services::BrokerHelper.new.perform_service_integration_test(test_args.merge(
         service_name: 'riak',
         plan_name: plan,
         test_app_repo_url: 'https://github.com/FreightTrain/riak-hello-world.git',
         test_endpoint: '/'
-      ))
+      ), bm)
     end
   end
 
