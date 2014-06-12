@@ -72,6 +72,7 @@ namespace :riak do |nm|
   task :test_deployment, [:spiff_dir] do |_, args|
     ip = Services::Addresses.new(args[:spiff_dir])
     Services::RiakHealth.new.check_health!(ip.addresses_for_job('riak'))
+    Services::RiakBucketDeletion.new.check_health!(ip.addresses_for_job('riak'))
     Services::BrokerHealth.new(port: 9292).check_health!(ip.addresses_for_job('riak_broker'))
   end
 

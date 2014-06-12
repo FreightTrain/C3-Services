@@ -2,6 +2,9 @@ require 'riak'
 
 module Services
   class RiakHealth
+
+    I18n.enforce_available_locales = false
+
     def check_health!(ip_addresses)
       timeout 5 do
         payload = '<html><body>Hello, world!</body></html>'
@@ -19,5 +22,6 @@ module Services
         raise unless client['doc']['index.html'].raw_data == payload
       end
     end
+
   end
 end
