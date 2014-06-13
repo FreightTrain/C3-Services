@@ -17,7 +17,7 @@ module Services
     def bosh_task(name, service_name)
       task name, [:core_manifest, :director_url, :stemcell_resource_uri, :spiff_dir, :username, :password] do |_, args|
         with_bosh_mediator(service_name, args) do |bm, release_dir|
-          yield bm, release_dir
+          yield bm, release_dir, args
         end
       end
     end
