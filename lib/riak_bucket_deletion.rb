@@ -5,21 +5,16 @@ module Services
 
     I18n.enforce_available_locales = false
 
+    BUCKET_NAME = 'to_be_deleted'
+
     def check_health!(ip_addresses)
-      require 'riak'
-      Riak.disable_list_keys_warnings = true
-      riak_nodes = ip_addresses.map do |ip|
-        {:host => ip,  :pb_port => 8087}
-      end
-      client = Riak::Client.new(:protocol => 'pbc', :nodes => riak_nodes)
-      object = client.bucket('to_be_deleted').new('foobar')
-      object.content_type = 'foo'
-      object.raw_data = 'baz'
-      object.store
+
+      r = RiakHelper.new(ip_addresses)
+      r.store(BUCKET_NAME, 'foobar')
 
       sleep 70
 
-      if client.buckets.map{|b| b.name}.include?('to_be_deleted')
+      if r.client.buckets.map{|b| b.name}.include?(BUCKET_NAME)
         raise 'Failed to delete bucket marked for deletion'
       end
     end

@@ -71,9 +71,14 @@ namespace :riak do |nm|
   desc 'Test the specified deployment'
   bosh_task :test_deployment, 'riak' do |bm, _, args|
     ip = Services::Addresses.new(args[:spiff_dir])
-    Services::RiakHealth.new.check_health!(ip.addresses_for_job('riak'))
-    Services::RiakBucketDeletion.new.check_health!(ip.addresses_for_job('riak'))
-    Services::RiakPersistence.new(bm).check_health!(ip.addresses_for_job('riak'))
+    riak_ips = ip.addresses_for_job('riak')
+    Services::RiakPersistence.new(bm).check_health!(riak_ips)
+    Services::RiakBucketDeletion.new.check_health!(riak_ips)
+    bosh = Services::BoshHelper.new
+    Services::RiakPersistence.new(bm).check_health!(riak_ips) do
+      bosh.stop_all_nodes(bm, 'riak', riak_ips.size)
+      bosh.recreate_all_nodes(bm, 'riak', riak_ips.size)
+    end
     Services::BrokerHealth.new(port: 9292).check_health!(ip.addresses_for_job('riak_broker'))
   end
 

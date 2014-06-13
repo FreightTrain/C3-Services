@@ -30,6 +30,18 @@ module Services
       bosh_mediator
     end
 
+    def stop_all_nodes(bm, job, node_count)
+      (0...node_count).each do |job_index|
+        bm.stop_job(job, job_index, hard: true)
+      end
+    end
+
+    def recreate_all_nodes(bm, job, node_count)
+      (0...node_count).each do |job_index|
+        bm.recreate_job(job, job_index)
+      end
+    end
+
     def local_release_file(release_file, release_dir)
       if release_file =~ /^http/
         ::BoshMediator::DownloadHelper.download_url(release_file, File.join(release_dir, 'release-manifest.yml'))
