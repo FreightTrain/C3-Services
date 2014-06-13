@@ -1,8 +1,8 @@
-require_relative '../lib/rake_helpers'
+require_relative '../lib/rake_helper'
 
 module Services
-  describe RakeHelpers do
-    let (:rh) { Object.new.extend(RakeHelpers) }
+  describe RakeHelper do
+    let (:rh) { Object.new.extend(RakeHelper) }
     describe '#release_dir' do
       it 'returns a directory under the project root' do
         path = rh.release_dir('foo')

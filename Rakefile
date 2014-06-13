@@ -5,7 +5,7 @@ require_relative 'lib/services'
 require_relative 'bosh-mediator/lib/bosh_mediator_factory'
 
 include ::BoshMediator::BoshMediatorFactory
-include ::Services::RakeHelpers
+include ::Services::RakeHelper
 
 RSpec::Core::RakeTask.new(:spec)
 task :default => :spec

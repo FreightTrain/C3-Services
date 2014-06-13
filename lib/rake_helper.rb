@@ -2,7 +2,7 @@ require_relative 'bosh_helper'
 
 module Services
 
-  module RakeHelpers
+  module RakeHelper
 
     def release_dir(name)
       (Pathname.new(__FILE__).parent.parent + name).to_s
