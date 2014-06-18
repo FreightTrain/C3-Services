@@ -3,8 +3,8 @@ require 'yaml'
 
 module Services
   class Addresses
-    def initialize(spiff_dir)
-      @env_path = Pathname.new(spiff_dir) + 'env.yml'
+    def initialize(spiff_file)
+      @env_path = spiff_file
     end
 
     def addresses_for_job(name)

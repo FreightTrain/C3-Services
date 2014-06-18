@@ -8,7 +8,7 @@ module Services
     include ::BoshMediator::BoshMediatorFactory
 
     def bosh_mediator(bosh_state, release_dir)
-      bosh_state = {:username => 'admin', :password => 'admin', :spiff_dir => nil}.merge!(bosh_state)
+      bosh_state = {:username => 'admin', :password => 'admin', :spiff_dir => nil, :toggle_file => nil}.merge!(bosh_state)
 
       core_manifest = bosh_state[:core_manifest]
 
@@ -24,7 +24,7 @@ module Services
           stemcell_release_info.merge!(:release_version => 'latest')
         end
 
-        manifest_file = ::BoshMediator::ManifestWriter.new(core_manifest, stemcell_release_info, bosh_state[:spiff_dir]).parse_and_merge_file
+        manifest_file = ::BoshMediator::ManifestWriter.new(core_manifest, stemcell_release_info, bosh_state[:spiff_dir]).parse_and_merge_file(bosh_state[:toggle_file])
         bosh_mediator.set_manifest_file(manifest_file)
       end
       bosh_mediator

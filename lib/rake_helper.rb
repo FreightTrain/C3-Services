@@ -11,12 +11,12 @@ module Services
     def with_bosh_mediator(name, args)
       rd = release_dir(name)
       bm = Services::BoshHelper.new.bosh_mediator(args, rd)
-      yield bm, rd
+      yield bm, rd, args
     end
 
     def bosh_task(name, service_name)
-      task name, [:core_manifest, :director_url, :stemcell_resource_uri, :spiff_dir, :username, :password] do |_, args|
-        with_bosh_mediator(service_name, args) do |bm, release_dir|
+      task name, [:core_manifest, :director_url, :stemcell_resource_uri, :spiff_dir, :toggle_file, :username, :password] do |_, args|
+        with_bosh_mediator(service_name, args) do |bm, release_dir, args|
           yield bm, release_dir, args
         end
       end

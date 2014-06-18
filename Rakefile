@@ -50,7 +50,7 @@ namespace :rmq do |nm|
 
   desc 'Test the specified deployment'
   task :test_deployment, [:spiff_dir] do |_, args|
-    ip = Services::Addresses.new(args[:spiff_dir])
+    ip = Services::Addresses.new(args[:spiff_dir] + '/env.yml')
     Services::BrokerHealth.new(port: 9998).check_health!(ip.addresses_for_job('rmq_broker'))
   end
 
@@ -69,17 +69,29 @@ end
 namespace :riak do |nm|
 
   desc 'Test the specified deployment'
-  bosh_task :test_deployment, 'riak' do |bm, _, args|
-    ip = Services::Addresses.new(args[:spiff_dir])
+  bosh_task :test_deployment, 'riak' do |b, rd, args|
+    ip = Services::Addresses.new(File.dirname(__FILE__) + '/riak/output-manifest.yml')
     riak_ips = ip.addresses_for_job('riak')
-    Services::RiakPersistence.new(bm).check_health!(riak_ips)
+    Services::RiakPersistence.new(b).check_health!(riak_ips)
+    Services::RiakClusterHealth.new.check_health!(riak_ips)
     Services::BrokerHealth.new(port: 9292).check_health!(ip.addresses_for_job('riak_broker'))
     Services::RiakBucketDeletion.new.check_health!(riak_ips)
     bosh = Services::BoshHelper.new
-    Services::RiakPersistence.new(bm).check_health!(riak_ips) do
-      bosh.stop_all_nodes(bm, 'riak', riak_ips.size)
-      bosh.recreate_all_nodes(bm, 'riak', riak_ips.size)
+    Services::RiakPersistence.new(b).check_health!(riak_ips) do
+      bosh.stop_all_nodes(b, 'riak', riak_ips.size)
+      bosh.recreate_all_nodes(b, 'riak', riak_ips.size)
     end
+  end
+
+  desc 'Test the specified deployment - with 4 servers'
+  bosh_task :test_deployment_4servers, 'riak' do |b, rd, args|
+    ip = Services::Addresses.new(File.dirname(__FILE__) + '/riak/output-manifest.yml')
+    riak_ips = ip.addresses_for_job('riak')
+    Rake::Task['riak:upload_and_deploy_release'].invoke(args[:core_manifest], args[:director_url], args[:stemcell_resource_uri], args[:spiff_dir], args[:toggle_file], args[:username], args[:password])
+    Services::RiakPersistence.new(b).check_health!(riak_ips)
+    Services::RiakClusterHealth.new.check_health!(riak_ips)
+    Services::RiakBucketDeletion.new.check_health!(riak_ips)
+    Services::BrokerHealth.new(port: 9292).check_health!(ip.addresses_for_job('riak_broker'))
   end
 
   desc 'Cloud Foundry integration test'
