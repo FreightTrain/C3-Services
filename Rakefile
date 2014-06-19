@@ -94,6 +94,15 @@ namespace :riak do |nm|
     Services::BrokerHealth.new(port: 9292).check_health!(ip.addresses_for_job('riak_broker'))
   end
 
+  desc 'Service instance limit integration test'
+  integration_task :service_limit_test, 'riak' do |test_args, bm|
+    Services::ServiceLimit.new.confirm_limit_is_enforced(test_args.merge(
+      service_name: 'riak',
+      plan_name: 'leveldb',
+      instance_count: 10
+    ), bm)
+  end
+
   desc 'Cloud Foundry integration test'
   integration_task :integration_test, 'riak' do |test_args, bm|
     %w(bitcask leveldb).each do |plan|
